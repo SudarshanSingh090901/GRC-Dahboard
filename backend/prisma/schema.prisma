@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  role     String
+  password String
+}
+
+model Assignment {
+  id             Int      @id @default(autoincrement())
+  framework      String
+  controlId      String
+  controlName    String
+  ownerName      String
+  testerName     String
+
+  status         String   @default("Assigned")
+
+  evidenceFile   String?
+  testerStatus   String?
+  testerRemarks  String?
+
+  ownerStatus    String?
+  ownerRemarks   String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

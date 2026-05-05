@@ -60,7 +60,7 @@
 
 import axios from "axios";
 
-const API_BASE = `${import.meta.env.VITE_API_URL}/auth`;
+const API_BASE = "https://grc-dahboard.onrender.com/api/auth";
 
 export async function loginUser(username: string, password: string) {
   try {

@@ -118,8 +118,34 @@
 
 
 
-import axios from "axios";
-import { API_BASE } from "../api/config";
+// import axios from "axios";
+// import { API_BASE } from "../api/config";
+
+// export async function loginUser(username: string, password: string) {
+//   try {
+//     const response = await axios.post(`${API_BASE}/auth/login`, {
+//       username,
+//       password,
+//     });
+
+//     if (!response.data.success) {
+//       throw new Error(response.data.message || "Invalid username or password");
+//     }
+
+//     return response.data.data;
+//   } catch (error: any) {
+//     console.error("LOGIN ERROR:", error?.response?.data || error);
+
+//     throw new Error(
+//       error?.response?.data?.message || "Login failed. Please try again."
+//     );
+//   }
+// }
+
+
+
+
+import { API_BASE } from "../api/config"; // or correct path
 
 export async function loginUser(username: string, password: string) {
   try {
@@ -135,7 +161,6 @@ export async function loginUser(username: string, password: string) {
     return response.data.data;
   } catch (error: any) {
     console.error("LOGIN ERROR:", error?.response?.data || error);
-
     throw new Error(
       error?.response?.data?.message || "Login failed. Please try again."
     );

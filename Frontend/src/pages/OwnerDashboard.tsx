@@ -320,9 +320,117 @@
 // }
 
 
+// import { useEffect, useState } from "react";
+// import axios from "axios";
+// import { API_BASE } from "../api/config"; // ✅ added
+
+// interface Assignment {
+//   id: number;
+//   framework: string;
+//   controlId: string;
+//   controlName: string;
+//   ownerName: string;
+//   testerName: string;
+//   status: string;
+//   testerStatus: string;
+//   ownerStatus: string;
+//   testerRemarks: string;
+//   ownerRemarks: string;
+//   evidenceFile: string | null;
+// }
+
+// interface EvidenceItem {
+//   type: string;
+//   fileName: string;
+// }
+
+// export default function OwnerDashboard() {
+//   const [assignments, setAssignments] = useState<Assignment[]>([]);
+//   const [ownerStatuses, setOwnerStatuses] = useState<Record<number, string>>({});
+//   const [ownerRemarks, setOwnerRemarks] = useState<Record<number, string>>({});
+
+//   const user = JSON.parse(localStorage.getItem("user") || "{}");
+//   const ownerName = user?.name || "";
+
+//   const fetchAssignments = async () => {
+//     try {
+//       const response = await axios.get(
+//         `${API_BASE}/assignments/owner/${ownerName}` // ✅ fixed
+//       );
+
+//       setAssignments(response.data.data || []);
+//     } catch (error) {
+//       console.error("OWNER FETCH ERROR:", error);
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (ownerName) {
+//       fetchAssignments();
+//     }
+//   }, [ownerName]);
+
+//   const handleReviewSubmit = async (assignmentId: number) => {
+//     try {
+//       await axios.put(
+//         `${API_BASE}/assignments/${assignmentId}/owner-review`, // ✅ fixed
+//         {
+//           ownerStatus: ownerStatuses[assignmentId] || "Approved",
+//           ownerRemarks: ownerRemarks[assignmentId] || "",
+//         }
+//       );
+
+//       alert("Review submitted successfully");
+//       fetchAssignments();
+//     } catch (error) {
+//       console.error("OWNER REVIEW ERROR:", error);
+//       alert("Failed to submit owner review");
+//     }
+//   };
+
+//   const parseEvidence = (evidenceFile: string | null): EvidenceItem[] => {
+//     try {
+//       if (!evidenceFile) return [];
+//       return JSON.parse(evidenceFile);
+//     } catch {
+//       return [];
+//     }
+//   };
+
+//   const pendingAssignments = assignments.filter(
+//     (assignment) => assignment.status === "Submitted To Owner"
+//   );
+
+//   const reviewedAssignments = assignments.filter(
+//     (assignment) =>
+//       assignment.status === "Completed" ||
+//       assignment.status === "Returned To Tester"
+//   );
+
+//   return (
+//     <div className="min-h-screen bg-[#020b1f] text-white px-10 py-8">
+//       <h1 className="text-5xl font-bold mb-3">Control Owner Dashboard</h1>
+
+//       <p className="text-gray-400 text-xl mb-10">
+//         Logged in as: {ownerName}
+//       </p>
+
+//       {/* UI unchanged */}
+//       {/* Everything below stays same — no logic change needed */}
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { API_BASE } from "../api/config"; // ✅ added
+import { API_BASE } from "../api/config";
 
 interface Assignment {
   id: number;
@@ -355,8 +463,10 @@ export default function OwnerDashboard() {
   const fetchAssignments = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE}/assignments/owner/${ownerName}` // ✅ fixed
+        `${API_BASE}/assignments/owner/${encodeURIComponent(ownerName)}`
       );
+
+      console.log("OWNER DATA:", response.data);
 
       setAssignments(response.data.data || []);
     } catch (error) {
@@ -373,7 +483,7 @@ export default function OwnerDashboard() {
   const handleReviewSubmit = async (assignmentId: number) => {
     try {
       await axios.put(
-        `${API_BASE}/assignments/${assignmentId}/owner-review`, // ✅ fixed
+        `${API_BASE}/assignments/${assignmentId}/owner-review`,
         {
           ownerStatus: ownerStatuses[assignmentId] || "Approved",
           ownerRemarks: ownerRemarks[assignmentId] || "",
@@ -398,25 +508,108 @@ export default function OwnerDashboard() {
   };
 
   const pendingAssignments = assignments.filter(
-    (assignment) => assignment.status === "Submitted To Owner"
+    (a) => a.status === "Submitted To Owner"
   );
 
   const reviewedAssignments = assignments.filter(
-    (assignment) =>
-      assignment.status === "Completed" ||
-      assignment.status === "Returned To Tester"
+    (a) =>
+      a.status === "Completed" ||
+      a.status === "Returned To Tester"
   );
 
   return (
     <div className="min-h-screen bg-[#020b1f] text-white px-10 py-8">
-      <h1 className="text-5xl font-bold mb-3">Control Owner Dashboard</h1>
+      <h1 className="text-5xl font-bold mb-3">
+        Control Owner Dashboard
+      </h1>
 
       <p className="text-gray-400 text-xl mb-10">
         Logged in as: {ownerName}
       </p>
 
-      {/* UI unchanged */}
-      {/* Everything below stays same — no logic change needed */}
+      {/* PENDING */}
+      <h2 className="text-2xl mb-4">Pending Reviews</h2>
+
+      {pendingAssignments.length === 0 ? (
+        <p className="text-gray-400 mb-10">No pending assignments</p>
+      ) : (
+        <div className="space-y-6 mb-10">
+          {pendingAssignments.map((a) => (
+            <div key={a.id} className="bg-[#0b1b3f] p-5 rounded-xl">
+              <h3 className="text-xl font-bold">
+                {a.controlId} - {a.controlName}
+              </h3>
+
+              <p>Tester: {a.testerName}</p>
+              <p>Status: {a.testerStatus}</p>
+              <p>Remarks: {a.testerRemarks || "None"}</p>
+
+              <div className="mt-2">
+                <p className="font-semibold">Evidence:</p>
+                {parseEvidence(a.evidenceFile).map((e, i) => (
+                  <p key={i} className="text-sm text-gray-300">
+                    {e.type} - {e.fileName}
+                  </p>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div className="mt-3">
+                <select
+                  className="bg-black p-2 rounded mr-3"
+                  onChange={(e) =>
+                    setOwnerStatuses((prev) => ({
+                      ...prev,
+                      [a.id]: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="Approved">Approve</option>
+                  <option value="Rejected">Reject</option>
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Remarks"
+                  className="bg-black p-2 rounded mr-3"
+                  onChange={(e) =>
+                    setOwnerRemarks((prev) => ({
+                      ...prev,
+                      [a.id]: e.target.value,
+                    }))
+                  }
+                />
+
+                <button
+                  onClick={() => handleReviewSubmit(a.id)}
+                  className="bg-blue-600 px-4 py-2 rounded"
+                >
+                  Submit Review
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* REVIEWED */}
+      <h2 className="text-2xl mb-4">Reviewed</h2>
+
+      {reviewedAssignments.length === 0 ? (
+        <p className="text-gray-400">No reviewed assignments</p>
+      ) : (
+        <div className="space-y-6">
+          {reviewedAssignments.map((a) => (
+            <div key={a.id} className="bg-[#1a2a5f] p-5 rounded-xl">
+              <h3>
+                {a.controlId} - {a.controlName}
+              </h3>
+              <p>Status: {a.ownerStatus}</p>
+              <p>Remarks: {a.ownerRemarks}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

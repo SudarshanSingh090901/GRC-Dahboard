@@ -189,22 +189,49 @@
 
 
 
+
+
+
+import { Request, Response } from "express";
+import { prisma } from "../lib/prisma";
+
+// ⏱️ Utility: timeout wrapper
+const withTimeout = async <T>(promise: Promise<T>, ms = 5000): Promise<T> => {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("Database timeout"));
+    }, ms);
+
+    promise
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+};
+
 export const login = async (req: Request, res: Response) => {
   try {
+    // ✅ FIX: Trim input (important)
     const username = req.body.username?.trim();
     const password = req.body.password?.trim();
 
-    console.log("🔐 LOGIN REQUEST RAW:", req.body.username);
-    console.log("🔐 LOGIN REQUEST TRIMMED:", username);
+    console.log("🔐 LOGIN RAW:", req.body.username);
+    console.log("🔐 LOGIN TRIMMED:", username);
 
     let user;
 
     try {
+      // ✅ FIX: Use contains instead of equals (handles small mismatches)
       user = await withTimeout(
         prisma.user.findFirst({
           where: {
             name: {
-              equals: username,
+              contains: username,
               mode: "insensitive",
             },
           },
@@ -220,13 +247,6 @@ export const login = async (req: Request, res: Response) => {
     }
 
     console.log("👤 USER FOUND:", user);
-
-    // 🔍 EXTRA DEBUG (VERY IMPORTANT)
-    const allUsers = await prisma.user.findMany();
-    console.log(
-      "📋 ALL USERS IN DB:",
-      allUsers.map((u) => `"${u.name}"`)
-    );
 
     // ❌ User not found
     if (!user) {

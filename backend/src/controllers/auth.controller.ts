@@ -96,36 +96,109 @@
 
 
 
-import { Request, Response } from "express";
-import { prisma } from "../lib/prisma";
+// import { Request, Response } from "express";
+// import { prisma } from "../lib/prisma";
 
-// ⏱️ Utility: timeout wrapper to avoid hanging queries
-const withTimeout = async <T>(promise: Promise<T>, ms = 5000): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error("Database timeout"));
-    }, ms);
+// // ⏱️ Utility: timeout wrapper to avoid hanging queries
+// const withTimeout = async <T>(promise: Promise<T>, ms = 5000): Promise<T> => {
+//   return new Promise((resolve, reject) => {
+//     const timer = setTimeout(() => {
+//       reject(new Error("Database timeout"));
+//     }, ms);
 
-    promise
-      .then((res) => {
-        clearTimeout(timer);
-        resolve(res);
-      })
-      .catch((err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
-  });
-};
+//     promise
+//       .then((res) => {
+//         clearTimeout(timer);
+//         resolve(res);
+//       })
+//       .catch((err) => {
+//         clearTimeout(timer);
+//         reject(err);
+//       });
+//   });
+// };
+
+// export const login = async (req: Request, res: Response) => {
+//   try {
+//     const { username, password } = req.body;
+
+//     console.log("🔐 LOGIN REQUEST:", username);
+
+//     // 🔎 Step 1: Find user with timeout protection
+//     let user;
+//     try {
+//       user = await withTimeout(
+//         prisma.user.findFirst({
+//           where: {
+//             name: {
+//               equals: username,
+//               mode: "insensitive",
+//             },
+//           },
+//         }),
+//         5000 // 5 sec timeout
+//       );
+//     } catch (dbError) {
+//       console.error("❌ DB ERROR:", dbError);
+//       return res.status(500).json({
+//         success: false,
+//         message: "Database connection issue",
+//       });
+//     }
+
+//     console.log("👤 USER FOUND:", user);
+
+//     // ❌ User not found
+//     if (!user) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     // ❌ Password mismatch
+//     if (user.password !== password) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Invalid username or password",
+//       });
+//     }
+
+//     // ✅ Success
+//     return res.status(200).json({
+//       success: true,
+//       data: {
+//         id: user.id,
+//         name: user.name,
+//         role: user.role,
+//       },
+//     });
+
+//   } catch (error) {
+//     console.error("🔥 LOGIN ERROR:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
+
+
+
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const username = req.body.username?.trim();
+    const password = req.body.password?.trim();
 
-    console.log("🔐 LOGIN REQUEST:", username);
+    console.log("🔐 LOGIN REQUEST RAW:", req.body.username);
+    console.log("🔐 LOGIN REQUEST TRIMMED:", username);
 
-    // 🔎 Step 1: Find user with timeout protection
     let user;
+
     try {
       user = await withTimeout(
         prisma.user.findFirst({
@@ -136,7 +209,7 @@ export const login = async (req: Request, res: Response) => {
             },
           },
         }),
-        5000 // 5 sec timeout
+        5000
       );
     } catch (dbError) {
       console.error("❌ DB ERROR:", dbError);
@@ -147,6 +220,13 @@ export const login = async (req: Request, res: Response) => {
     }
 
     console.log("👤 USER FOUND:", user);
+
+    // 🔍 EXTRA DEBUG (VERY IMPORTANT)
+    const allUsers = await prisma.user.findMany();
+    console.log(
+      "📋 ALL USERS IN DB:",
+      allUsers.map((u) => `"${u.name}"`)
+    );
 
     // ❌ User not found
     if (!user) {

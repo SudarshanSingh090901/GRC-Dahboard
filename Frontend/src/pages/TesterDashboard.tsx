@@ -367,9 +367,168 @@
 
 
 
+// import { useEffect, useState } from "react";
+// import axios from "axios";
+// import { API_BASE } from "../api/config"; // ✅ added
+
+// interface Assignment {
+//   id: number;
+//   framework: string;
+//   controlId: string;
+//   controlName: string;
+//   ownerName: string;
+//   testerName: string;
+//   status: string;
+//   testerStatus: string;
+//   ownerStatus: string;
+//   testerRemarks: string;
+//   evidenceFile: string | null;
+// }
+
+// interface EvidenceItem {
+//   type: string;
+//   fileName: string;
+// }
+
+// const evidenceOptions = [
+//   "Logs",
+//   "SOP",
+//   "Policy",
+//   "Screenshot",
+//   "Report",
+//   "Configuration",
+//   "Audit Trail",
+//   "Other",
+// ];
+
+// export default function TesterDashboard() {
+//   const [assignments, setAssignments] = useState<Assignment[]>([]);
+//   const [loading, setLoading] = useState(true);
+
+//   const [selectedEvidenceType, setSelectedEvidenceType] = useState<Record<number, string>>({});
+//   const [uploadedEvidence, setUploadedEvidence] = useState<Record<number, EvidenceItem[]>>({});
+//   const [testerStatuses, setTesterStatuses] = useState<Record<number, string>>({});
+//   const [testerRemarksMap, setTesterRemarksMap] = useState<Record<number, string>>({});
+
+//   const loggedInUser = localStorage.getItem("user");
+//   const parsedUser = loggedInUser ? JSON.parse(loggedInUser) : null;
+//   const testerName = parsedUser?.name || "";
+
+//   const fetchAssignments = async () => {
+//     try {
+//       setLoading(true);
+
+//       const response = await axios.get(
+//         `${API_BASE}/assignments/tester/${testerName}` // ✅ fixed
+//       );
+
+//       const data: Assignment[] = response.data.data || [];
+//       setAssignments(data);
+
+//       const evidenceMap: Record<number, EvidenceItem[]> = {};
+
+//       data.forEach((assignment) => {
+//         try {
+//           evidenceMap[assignment.id] = assignment.evidenceFile
+//             ? JSON.parse(assignment.evidenceFile)
+//             : [];
+//         } catch {
+//           evidenceMap[assignment.id] = [];
+//         }
+//       });
+
+//       setUploadedEvidence(evidenceMap);
+//     } catch (error) {
+//       console.error("FETCH TESTER ASSIGNMENTS ERROR:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     if (testerName) {
+//       fetchAssignments();
+//     }
+//   }, [testerName]);
+
+//   const handleFileSelect = (assignmentId: number, file: File | null) => {
+//     if (!file) return;
+
+//     const evidenceType = selectedEvidenceType[assignmentId] || "Other";
+
+//     const newEvidence: EvidenceItem = {
+//       type: evidenceType,
+//       fileName: file.name,
+//     };
+
+//     setUploadedEvidence((prev) => ({
+//       ...prev,
+//       [assignmentId]: [...(prev[assignmentId] || []), newEvidence],
+//     }));
+//   };
+
+//   const handleSubmitToOwner = async (assignmentId: number) => {
+//     try {
+//       const testerStatus = testerStatuses[assignmentId] || "Implemented";
+//       const testerRemarks = testerRemarksMap[assignmentId] || "";
+//       const evidenceForControl = uploadedEvidence[assignmentId] || [];
+
+//       await axios.put(
+//         `${API_BASE}/assignments/${assignmentId}/tester-submit`, // ✅ fixed
+//         {
+//           testerStatus,
+//           testerRemarks,
+//           evidenceFile: evidenceForControl,
+//         }
+//       );
+
+//       alert("Evidence submitted successfully");
+//       fetchAssignments();
+//     } catch (error: any) {
+//       console.error("SUBMIT EVIDENCE ERROR:", error?.response?.data || error);
+
+//       alert(
+//         error?.response?.data?.message ||
+//           "Failed to submit evidence"
+//       );
+//     }
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="p-10 text-white text-xl">
+//         Loading assignments...
+//       </div>
+//     );
+//   }
+
+//   const pendingAssignments = assignments.filter(
+//     (assignment) =>
+//       assignment.status !== "Completed" &&
+//       assignment.status !== "Submitted To Owner"
+//   );
+
+//   return (
+//     <div className="min-h-screen bg-[#020b1f] text-white px-10 py-8">
+//       <h1 className="text-5xl font-bold mb-3">Tester Dashboard</h1>
+
+//       <p className="text-gray-400 text-xl mb-10">
+//         Logged in as: {testerName}
+//       </p>
+
+//       {/* UI unchanged */}
+//     </div>
+//   );
+// }
+
+
+
+
+
+
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { API_BASE } from "../api/config"; // ✅ added
+import { API_BASE } from "../api/config";
 
 interface Assignment {
   id: number;
@@ -419,7 +578,7 @@ export default function TesterDashboard() {
       setLoading(true);
 
       const response = await axios.get(
-        `${API_BASE}/assignments/tester/${testerName}` // ✅ fixed
+        `${API_BASE}/assignments/tester/${encodeURIComponent(testerName)}`
       );
 
       const data: Assignment[] = response.data.data || [];
@@ -474,7 +633,7 @@ export default function TesterDashboard() {
       const evidenceForControl = uploadedEvidence[assignmentId] || [];
 
       await axios.put(
-        `${API_BASE}/assignments/${assignmentId}/tester-submit`, // ✅ fixed
+        `${API_BASE}/assignments/${assignmentId}/tester-submit`,
         {
           testerStatus,
           testerRemarks,
@@ -495,18 +654,8 @@ export default function TesterDashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="p-10 text-white text-xl">
-        Loading assignments...
-      </div>
-    );
+    return <div className="p-10 text-white text-xl">Loading assignments...</div>;
   }
-
-  const pendingAssignments = assignments.filter(
-    (assignment) =>
-      assignment.status !== "Completed" &&
-      assignment.status !== "Submitted To Owner"
-  );
 
   return (
     <div className="min-h-screen bg-[#020b1f] text-white px-10 py-8">
@@ -516,7 +665,88 @@ export default function TesterDashboard() {
         Logged in as: {testerName}
       </p>
 
-      {/* UI unchanged */}
+      {assignments.length === 0 ? (
+        <p className="text-gray-400">No assignments found</p>
+      ) : (
+        <div className="space-y-6">
+          {assignments.map((a) => (
+            <div key={a.id} className="bg-[#0b1b3f] p-5 rounded-xl">
+              <h2 className="text-xl font-bold">
+                {a.controlId} - {a.controlName}
+              </h2>
+
+              <p className="text-sm text-gray-400 mb-3">
+                Framework: {a.framework}
+              </p>
+
+              {/* Evidence Type */}
+              <select
+                className="bg-black p-2 rounded mr-3"
+                onChange={(e) =>
+                  setSelectedEvidenceType((prev) => ({
+                    ...prev,
+                    [a.id]: e.target.value,
+                  }))
+                }
+              >
+                <option>Select Evidence Type</option>
+                {evidenceOptions.map((opt) => (
+                  <option key={opt}>{opt}</option>
+                ))}
+              </select>
+
+              {/* File Upload */}
+              <input
+                type="file"
+                onChange={(e) =>
+                  handleFileSelect(a.id, e.target.files?.[0] || null)
+                }
+                className="mb-3"
+              />
+
+              {/* Status */}
+              <select
+                className="bg-black p-2 rounded mr-3"
+                onChange={(e) =>
+                  setTesterStatuses((prev) => ({
+                    ...prev,
+                    [a.id]: e.target.value,
+                  }))
+                }
+              >
+                <option value="Implemented">Implemented</option>
+                <option value="Partially Implemented">
+                  Partially Implemented
+                </option>
+                <option value="Not Implemented">
+                  Not Implemented
+                </option>
+              </select>
+
+              {/* Remarks */}
+              <input
+                type="text"
+                placeholder="Remarks"
+                className="bg-black p-2 rounded w-full mt-2"
+                onChange={(e) =>
+                  setTesterRemarksMap((prev) => ({
+                    ...prev,
+                    [a.id]: e.target.value,
+                  }))
+                }
+              />
+
+              {/* Submit */}
+              <button
+                onClick={() => handleSubmitToOwner(a.id)}
+                className="mt-3 bg-blue-600 px-4 py-2 rounded"
+              >
+                Submit to Owner
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
